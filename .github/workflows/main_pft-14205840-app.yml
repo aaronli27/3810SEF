@@ -74,9 +74,8 @@ EOF
           mkdir -p views
           echo "✅ Created views directory"
           
-          # Create essential EJS templates if they don't exist
-          if [ ! -f views/login.ejs ]; then
-            cat > views/login.ejs << 'EOF'
+          # Create login.ejs template
+          cat > views/login.ejs << 'EOF'
 <!DOCTYPE html>
 <html>
 <head>
@@ -88,8 +87,10 @@ EOF
         <p style="color: red;"><%= error %></p>
     <% } %>
     <form method="POST">
-        <input type="text" name="username" placeholder="Username" required><br>
-        <input type="password" name="password" placeholder="Password" required><br>
+        <input type="text" name="username" placeholder="Username" required>
+        <br>
+        <input type="password" name="password" placeholder="Password" required>
+        <br>
         <button type="submit">Login</button>
     </form>
     <% if (Accounts) { %>
@@ -101,18 +102,13 @@ EOF
 </body>
 </html>
 EOF
-            echo "✅ Created login.ejs"
-          fi
+          echo "✅ Created login.ejs"
 
       - name: Install dependencies
-        run: |
-          npm ci
-          echo "✅ Dependencies installed"
+        run: npm install
 
       - name: Run tests
-        run: |
-          npm test
-          echo "✅ Tests completed"
+        run: npm test
 
       - name: Build verification
         run: |
@@ -137,9 +133,7 @@ EOF
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: |
-            .
-            !node_modules/
+          path: .
           retention-days: 1
 
   deploy:
@@ -148,23 +142,19 @@ EOF
     permissions:
       id-token: write
       contents: read
-    environment:
-      name: 'Production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
           name: node-app
-          path: .
 
       - name: Verify deployment package
         run: |
           echo "Deployment package contents:"
           ls -la
           echo "Views directory:"
-          ls -la views/ || echo "No views directory"
+          ls -la views/
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -180,8 +170,8 @@ EOF
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           slot-name: 'Production'
           package: .
-          
+
       - name: Verify deployment
         run: |
           echo "Application deployed successfully!"
-          echo "URL: ${{ steps.deploy-to-webapp.outputs.webapp-url }}"
+          echo "URL: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"

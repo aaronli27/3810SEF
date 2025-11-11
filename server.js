@@ -535,7 +535,7 @@ app.get('/*', (req, res) => {
     res.status(404).render('error', { message: `${req.path} - Page not found!` });
 });
 
-const PORT = process.env.PORT || 8099;
+const PORT = process.env.PORT || 3000;
 
 client.connect().then(async () => {
     const db = client.db(dbName);
@@ -549,5 +549,6 @@ client.connect().then(async () => {
     console.error("Failed to start server:", error);
     process.exit(1);
 });
+
 
 

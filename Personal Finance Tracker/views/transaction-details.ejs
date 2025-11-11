@@ -1,0 +1,23 @@
+<html>
+<body>
+    <h1>Transaction Details</h1>
+    <p><a href="/transactions">Back to Transactions</a></p>
+    
+    <h2><%= transaction.title %></h2>
+    <p><b>Amount:</b> $<%= transaction.amount.toFixed(2) %> (<%= transaction.type %>)</p>
+    <p><b>Category:</b> <%= transaction.category %></p>
+    <p><b>Date:</b> <%= new Date(transaction.date).toLocaleDateString() %></p>
+    <p><b>Payment Method:</b> <%= transaction.paymentMethod %></p>
+    <% if (transaction.description) { %>
+        <p><b>Description:</b> <%= transaction.description %></p>
+    <% } %>
+    
+    <p>
+        <a href="/transactions/edit?_id=<%= transaction._id %>">Edit</a> | 
+        <form action="/transactions/delete" method="POST" style="display:inline">
+            <input type="hidden" name="_id" value="<%= transaction._id %>">
+            <button onclick="return confirm('Delete this transaction?')">Delete</button>
+        </form>
+    </p>
+</body>
+</html>

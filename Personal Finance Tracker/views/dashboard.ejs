@@ -1,0 +1,17 @@
+<html>
+<body>
+    <h1>Dashboard - Welcome <%= user.username %></h1>
+    <p><a href="/logout">Logout</a></p>
+    
+    <h2>Summary</h2>
+    <p>Income: $<%= totalIncome.toFixed(2) %></p>
+    <p>Expenses: $<%= totalExpenses.toFixed(2) %></p>
+    <p>Balance: $<%= netBalance.toFixed(2) %></p>
+    <p>Transactions: <%= transactionCount %></p>
+    
+    <p>
+        <a href="/transactions">View Transactions</a> | 
+        <a href="/transactions/create">Add Transaction</a>
+    </p>
+</body>
+</html>

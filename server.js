@@ -11,12 +11,19 @@ const express = require('express');
 const app = express();
 const fs = require('node:fs/promises');
 const formidable = require('express-formidable'); 
+const cookieSession = require('cookie-session');
+
+app.use(cookieSession({
+    name: 'session',
+    keys: ['your-secret-key-here'],
+    maxAge: 24 * 60 * 60 * 1000
+}));
 app.use(formidable());
 
 /* Model - mongodb modules
 mongodb ^6.9: https://www.npmjs.com/package/mongodb
 */
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const url = 'mongodb+srv://Aaronli:Aaron@cluster0.fwfuo0a.mongodb.net/';  
 const client = new MongoClient(url, {
     serverApi: {
@@ -549,6 +556,7 @@ client.connect().then(async () => {
     console.error("Failed to start server:", error);
     process.exit(1);
 });
+
 
 
 

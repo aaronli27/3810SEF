@@ -3,15 +3,16 @@
     "description": "Personal_Finance_Tracker",
     "author": "Group 51",
     "version": "1.0.0",
-    "main":"server.js",
+    "main": "server.js",
     "dependencies": {
         "ejs": "*",
         "express": "*",
         "express-formidable": "*",
-        "mongodb": "^6.9.0",
-        "nodemon": "*"
+        "mongodb": "*",
+        "cookie-session": "*"
     },
-    "engine":{ "node >= 16.0.0"
+    "engines": {
+        "node": ">=16.0.0"
     },
     "scripts": {
         "start": "node server.js"

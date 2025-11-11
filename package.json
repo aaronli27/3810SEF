@@ -3,6 +3,7 @@
     "description": "Personal Finance Tracker",
     "author": "Group 51",
     "version": "0.0.1",
+    "main":"server.js",
     "dependencies": {
         "ejs": "*",
         "express": "*",
@@ -12,6 +13,7 @@
     },
     "engine": "node >= 16.0.0",
     "scripts": {
-        "start": "node server"
+        "start": "node server.js"
     }
 }
+

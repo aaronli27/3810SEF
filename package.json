@@ -1,8 +1,8 @@
 {
     "name": "server",
-    "description": "Personal Finance Tracker",
+    "description": "Personal_Finance_Tracker",
     "author": "Group 51",
-    "version": "0.0.1",
+    "version": "1.0.0",
     "main":"server.js",
     "dependencies": {
         "ejs": "*",
@@ -17,5 +17,6 @@
         "start": "node server.js"
     }
 }
+
 
 

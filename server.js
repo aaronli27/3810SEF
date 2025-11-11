@@ -535,8 +535,19 @@ app.get('/*', (req, res) => {
     res.status(404).render('error', { message: `${req.path} - Page not found!` });
 });
 
-app.listen(process.env.PORT || 8099, () => {
-    console.log(`Server running on port ${process.env.PORT || 8099}`);
+const PORT = process.env.PORT || 8099;
+
+client.connect().then(async () => {
+    const db = client.db(dbName);
+    await initializeDatabase(db);
+    console.log("Database initialized successfully");
+    
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+}).catch(error => {
+    console.error("Failed to start server:", error);
+    process.exit(1);
 });
 
 

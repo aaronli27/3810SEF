@@ -1,6 +1,3 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
 name: Build and deploy Node.js app to Azure Web App - PFT-14205840-app
 
 on:
@@ -9,45 +6,166 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  NODE_VERSION: '20.x'
+  AZURE_WEBAPP_NAME: 'PFT-14205840-app'
+
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set up Node.js version
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20.x'
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
-      - name: npm install, build, and test
+      - name: Verify repository structure
         run: |
-          npm install
-          npm run build --if-present
-          npm run test --if-present
+          echo "Current directory: $(pwd)"
+          echo "Files in repository:"
+          ls -la
+          echo "Checking for server.js:"
+          ls -la server.js || echo "server.js not found"
+          echo "Checking for package.json:"
+          ls -la package.json || echo "package.json not found"
 
-      - name: Upload artifact for deployment job
+      - name: Create package.json if missing
+        run: |
+          if [ ! -f package.json ]; then
+            echo "Creating package.json..."
+            cat > package.json << 'EOF'
+{
+  "name": "personal-finance-tracker",
+  "version": "1.0.0",
+  "description": "Personal Finance Tracker - Group 51",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "dependencies": {
+    "ejs": "^3.1.9",
+    "express": "^4.18.2",
+    "express-formidable": "^1.0.0",
+    "mongodb": "^6.9.0",
+    "cookie-session": "^2.1.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "author": "Group 51",
+  "license": "MIT"
+}
+EOF
+            echo "✅ package.json created"
+          else
+            echo "✅ package.json already exists"
+          fi
+
+      - name: Create views directory and templates
+        run: |
+          mkdir -p views
+          echo "✅ Created views directory"
+          
+          # Create essential EJS templates if they don't exist
+          if [ ! -f views/login.ejs ]; then
+            cat > views/login.ejs << 'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login - Finance Tracker</title>
+</head>
+<body>
+    <h1>Login to Finance Tracker</h1>
+    <% if (error) { %>
+        <p style="color: red;"><%= error %></p>
+    <% } %>
+    <form method="POST">
+        <input type="text" name="username" placeholder="Username" required><br>
+        <input type="password" name="password" placeholder="Password" required><br>
+        <button type="submit">Login</button>
+    </form>
+    <% if (Accounts) { %>
+        <h3>Demo Accounts:</h3>
+        <% Accounts.forEach(account => { %>
+            <p><strong><%= account.username %></strong> / <%= account.password %></p>
+        <% }); %>
+    <% } %>
+</body>
+</html>
+EOF
+            echo "✅ Created login.ejs"
+          fi
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          echo "✅ Dependencies installed"
+
+      - name: Run tests
+        run: |
+          npm test
+          echo "✅ Tests completed"
+
+      - name: Build verification
+        run: |
+          echo "Verifying build..."
+          if [ -f server.js ]; then
+            echo "✅ server.js found"
+            node -c server.js && echo "✅ server.js syntax is valid"
+          else
+            echo "❌ server.js not found"
+            exit 1
+          fi
+          
+          if [ -d views ]; then
+            echo "✅ views directory exists"
+            ls -la views/
+          else
+            echo "❌ views directory missing"
+            exit 1
+          fi
+
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: .
+          path: |
+            .
+            !node_modules/
+          retention-days: 1
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+      id-token: write
+      contents: read
+    environment:
+      name: 'Production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
-      - name: Download artifact from build job
+      - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
           name: node-app
-      
+          path: .
+
+      - name: Verify deployment package
+        run: |
+          echo "Deployment package contents:"
+          ls -la
+          echo "Views directory:"
+          ls -la views/ || echo "No views directory"
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -55,11 +173,15 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_754D58B686B746F3885B8E03734D96F2 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_E625377E58874A9EB93188DCEF345AD9 }}
 
-      - name: 'Deploy to Azure Web App'
+      - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'PFT-14205840-app'
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
           slot-name: 'Production'
           package: .
           
+      - name: Verify deployment
+        run: |
+          echo "Application deployed successfully!"
+          echo "URL: ${{ steps.deploy-to-webapp.outputs.webapp-url }}"

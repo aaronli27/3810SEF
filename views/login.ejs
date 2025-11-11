@@ -1,0 +1,16 @@
+<html>
+<body>
+    <h1>Login</h1>
+    <% if (error) { %><p style="color:red"><%= error %></p><% } %>
+    <form method="POST">
+        <input name="username" placeholder="Username" required><br>
+        <input type="password" name="password" placeholder="Password" required><br>
+        <button>Login</button>
+    </form>
+    <hr>
+    <h3>Demo Accounts:</h3>
+    <% demoAccounts.forEach(account => { %>
+        <p><b><%= account.username %></b> / <%= account.password %></p>
+    <% }); %>
+</body>
+</html>

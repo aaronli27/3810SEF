@@ -18,7 +18,12 @@ mongodb ^6.9: https://www.npmjs.com/package/mongodb
 */
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const url = 'mongodb+srv://Aaronli:Aaron@cluster0.fwfuo0a.mongodb.net/';  
-const client = new MongoClient(url);
+const client = new MongoClient(url, {
+    serverApi: {
+        version: ServerApiVersion.v1,
+        strict: true,
+        deprecationErrors: true,
+    });
 const dbName = 'project_PFT';
 
 
@@ -533,4 +538,5 @@ app.get('/*', (req, res) => {
 app.listen(process.env.PORT || 8099, () => {
     console.log(`Server running on port ${process.env.PORT || 8099}`);
 });
+
 

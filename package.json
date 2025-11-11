@@ -8,12 +8,14 @@
         "ejs": "*",
         "express": "*",
         "express-formidable": "*",
-        "mongodb": "6.9.0",
+        "mongodb": "^6.9.0",
         "nodemon": "*"
     },
-    "engine": "node >= 16.0.0",
+    "engine":{ "node >= 16.0.0"
+    },
     "scripts": {
         "start": "node server.js"
     }
 }
+
 

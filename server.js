@@ -212,6 +212,10 @@ const authenticateUser = async (req, res, next) => {
 };
 
 // Routes
+app.get('/', (req, res) => {
+    res.redirect('/login');
+});
+
 app.get('/login', (req, res) => {
     res.status(200).render('login', { 
         error: null,
@@ -280,3 +284,4 @@ client.connect().then(async () => {
     console.error("❌ Failed to start server:", error);
     process.exit(1);
 });
+

@@ -1,8 +1,24 @@
 <html>
 <body>
-    <h1>Transactions</h1>
-    <p><a href="/dashboard">Dashboard</a> | <a href="/transactions/create">Add New</a></p>
+    <h1>Personal Finance Tracker</h1>
+    <p>Welcome, <%= user.username %> | <a href="/logout">Logout</a></p>
     
+    <!-- Financial Summary (from old dashboard) -->
+    <h2>Financial Summary</h2>
+    <%
+        const totalIncome = transactions.filter(t => t.type === 'Income').reduce((sum, t) => sum + t.amount, 0);
+        const totalExpenses = transactions.filter(t => t.type === 'Expense').reduce((sum, t) => sum + t.amount, 0);
+        const netBalance = totalIncome - totalExpenses;
+    %>
+    <p><strong>Income:</strong> $<%= totalIncome.toFixed(2) %></p>
+    <p><strong>Expenses:</strong> $<%= totalExpenses.toFixed(2) %></p>
+    <p><strong>Balance:</strong> $<%= netBalance.toFixed(2) %></p>
+    <p><strong>Total Transactions:</strong> <%= transactions.length %></p>
+    
+    <hr>
+    
+    <!-- Filters -->
+    <h2>Transactions</h2>
     <form method="GET">
         <select name="type">
             <option value="">All Types</option>
@@ -18,9 +34,12 @@
         </select>
         <input name="search" placeholder="Search" value="<%= filters.search || '' %>">
         <button>Filter</button>
+        <a href="/transactions">Clear</a>
     </form>
     
-    <h2>Transactions (<%= transactions.length %>)</h2>
+    <p><a href="/transactions/create">+ Add New Transaction</a></p>
+    
+    <!-- Transactions Table -->
     <% if (transactions.length === 0) { %>
         <p>No transactions found.</p>
     <% } else { %>

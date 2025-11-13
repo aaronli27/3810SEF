@@ -228,7 +228,7 @@ app.get('/login', (req, res) => {
 });
 
 app.post('/login', authenticateUser, (req, res) => {
-    res.redirect('/dashboard');
+    res.redirect('/transactions');
 });
 
 app.get('/signup', (req, res) => {
@@ -356,6 +356,7 @@ client.connect().then(async () => {
     console.error("❌ Failed to start server:", error);
     process.exit(1);
 });
+
 
 
 

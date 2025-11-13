@@ -137,13 +137,16 @@ const insertDocument = async (db, collectionName, doc) => {
 }
 
 const findDocument = async (db, collectionName, criteria) => {
-    let findResults = [];
-    let collection = db.collection(collectionName);
-    console.log(`findCriteria: ${JSON.stringify(criteria)}`);
-    findResults = await collection.find(criteria).toArray();
-    console.log(`findDocument: ${findResults.length}`);
-    console.log(`findResults: ${JSON.stringify(findResults)}`);
-    return findResults;
+    try {
+        console.log(`Searching in ${collectionName} with criteria:`, criteria);
+        const collection = db.collection(collectionName);
+        const findResults = await collection.find(criteria).toArray();
+        console.log(`Found ${findResults.length} documents in ${collectionName}`);
+        return findResults;
+    } catch (error) {
+        console.error('Error in findDocument:', error);
+        return [];
+    }
 };
 
 const updateDocument = async (db, collectionName, criteria, updateDoc) => {
@@ -356,6 +359,7 @@ client.connect().then(async () => {
     console.error("❌ Failed to start server:", error);
     process.exit(1);
 });
+
 
 
 

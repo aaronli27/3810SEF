@@ -291,15 +291,9 @@ app.post('/signup', async (req, res) => {
         };
         
         const result = await insertDocument(db, usersCollection, newUser);
-        
-        // Auto-login after signup
-        req.session.user = {
-            _id: result.insertedId,
-            username: username,
-            email: email
-        };
-        
-        res.redirect('/dashboard');
+
+        req.session = null;
+        res.redirect('/login');
         
     } catch (error) {
         console.error("Signup error:", error);
@@ -362,5 +356,6 @@ client.connect().then(async () => {
     console.error("❌ Failed to start server:", error);
     process.exit(1);
 });
+
 
 

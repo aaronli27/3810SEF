@@ -231,6 +231,84 @@ app.post('/login', authenticateUser, (req, res) => {
     res.redirect('/dashboard');
 });
 
+app.get('/signup', (req, res) => {
+    res.status(200).render('signup', { 
+        error: null,
+        user: null
+    });
+});
+
+app.post('/signup', async (req, res) => {
+    try {
+        await client.connect();
+        const db = client.db(dbName);
+        
+        const { username, email, password, confirmPassword } = req.fields;
+        
+        // Validation
+        if (!username || !email || !password || !confirmPassword) {
+            return res.status(200).render('signup', { 
+                error: "All fields are required",
+                user: null
+            });
+        }
+        
+        if (password !== confirmPassword) {
+            return res.status(200).render('signup', { 
+                error: "Passwords do not match",
+                user: null
+            });
+        }
+        
+        if (password.length < 6) {
+            return res.status(200).render('signup', { 
+                error: "Password must be at least 6 characters",
+                user: null
+            });
+        }
+        
+        // Check if user already exists
+        const existingUser = await db.collection(usersCollection).findOne({
+            $or: [
+                { username: username },
+                { email: email }
+            ]
+        });
+        
+        if (existingUser) {
+            return res.status(200).render('signup', { 
+                error: "Username or email already exists",
+                user: null
+            });
+        }
+        
+        // Create new user
+        const newUser = {
+            username: username,
+            email: email,
+            password: password, // In production, hash this!
+            createdAt: new Date()
+        };
+        
+        const result = await insertDocument(db, usersCollection, newUser);
+        
+        // Auto-login after signup
+        req.session.user = {
+            _id: result.insertedId,
+            username: username,
+            email: email
+        };
+        
+        res.redirect('/dashboard');
+        
+    } catch (error) {
+        console.error("Signup error:", error);
+        res.status(500).render('error', { message: "Signup failed" });
+    } finally {
+        await client.close();
+    }
+});
+
 app.get('/logout', (req, res) => {
     req.session = null;
     res.redirect('/login');
@@ -284,4 +362,5 @@ client.connect().then(async () => {
     console.error("❌ Failed to start server:", error);
     process.exit(1);
 });
+
 

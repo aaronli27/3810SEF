@@ -308,42 +308,42 @@ app.get('/logout', (req, res) => {
     res.redirect('/login');
 });
 
-app.get('/dashboard', authenticateUser, async (req, res) => {
+app.get('/transactions', authenticateUser, async (req, res) => {
     try {
         await client.connect();
         const db = client.db(dbName);
-        const transactions = await findDocument(db, transactionsCollection, { userId: req.user._id });
-       
-        const totalIncome = transactions
-            .filter(t => t.type === 'Income')
-            .reduce((sum, t) => sum + t.amount, 0);
-            
-        const totalExpenses = transactions
-            .filter(t => t.type === 'Expense')
-            .reduce((sum, t) => sum + t.amount, 0);
-            
-        const netBalance = totalIncome - totalExpenses;
         
-        res.status(200).render('dashboard', {
+        let criteria = { userId: req.user._id };
+        
+        // Apply filters from query parameters
+        if (req.query.type) criteria.type = req.query.type;
+        if (req.query.category) criteria.category = req.query.category;
+        if (req.query.paymentMethod) criteria.paymentMethod = req.query.paymentMethod;
+        if (req.query.search) {
+            criteria.$or = [
+                { title: { $regex: req.query.search, $options: 'i' } },
+                { description: { $regex: req.query.search, $options: 'i' } }
+            ];
+        }
+        
+        const transactions = await findDocument(db, transactionsCollection, criteria);
+        res.status(200).render('transactions', { 
             user: req.user,
-            totalIncome,
-            totalExpenses, 
-            netBalance,
-            transactionCount: transactions.length
+            transactions,
+            filters: req.query
         });
     } catch (error) {
-        console.error("Dashboard error:", error);
-        res.status(500).render('error', { message: "Failed to load dashboard" });
+        console.error("Transactions error:", error);
+        res.status(500).render('error', { message: "Failed to load transactions" });
     } finally {
         await client.close();
     }
 });
 
-// ... (keep all your other routes - they look correct)
+
 
 const PORT = process.env.PORT || 3000;
 
-// REMOVED duplicate client.connect() - only keep this one:
 client.connect().then(async () => {
     const db = client.db(dbName);
     await initializeDatabase(db);
@@ -356,6 +356,7 @@ client.connect().then(async () => {
     console.error("❌ Failed to start server:", error);
     process.exit(1);
 });
+
 
 
 

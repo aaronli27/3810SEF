@@ -343,6 +343,240 @@ app.get('/transactions', authenticateUser, async (req, res) => {
     }
 });
 
+app.get('/transactions/create', authenticateUser, (req, res) => {
+    res.status(200).render('transaction-create', { user: req.user });
+});
+
+app.post('/transactions/create', authenticateUser, async (req, res) => {
+    try {
+        await client.connect();
+        const db = client.db(dbName);
+        
+        const newTransaction = {
+            title: req.fields.title,
+            amount: parseFloat(req.fields.amount),
+            type: req.fields.type,
+            category: req.fields.category,
+            date: new Date(req.fields.date),
+            description: req.fields.description,
+            paymentMethod: req.fields.paymentMethod,
+            userId: req.user._id,
+            createdAt: new Date()
+        };
+        
+        await insertDocument(db, transactionsCollection, newTransaction);
+        res.redirect('/transactions');
+    } catch (error) {
+        console.error("Create transaction error:", error);
+        res.status(500).render('error', { message: "Failed to create transaction" });
+    } finally {
+        await client.close();
+    }
+});
+
+// Transaction Details
+app.get('/transactions/details', authenticateUser, async (req, res) => {
+    try {
+        await client.connect();
+        const db = client.db(dbName);
+        
+        let criteria = { _id: new ObjectId(req.query._id), userId: req.user._id };
+        const transactions = await findDocument(db, transactionsCollection, criteria);
+        
+        if (transactions.length === 0) {
+            return res.status(404).render('error', { message: "Transaction not found" });
+        }
+        
+        res.status(200).render('transaction-details', { 
+            transaction: transactions[0],
+            user: req.user
+        });
+    } catch (error) {
+        console.error("Transaction details error:", error);
+        res.status(500).render('error', { message: "Failed to load transaction details" });
+    } finally {
+        await client.close();
+    }
+});
+
+// Edit Transaction
+app.get('/transactions/edit', authenticateUser, async (req, res) => {
+    try {
+        await client.connect();
+        const db = client.db(dbName);
+        
+        let criteria = { _id: new ObjectId(req.query._id), userId: req.user._id };
+        const transactions = await findDocument(db, transactionsCollection, criteria);
+        
+        if (transactions.length === 0) {
+            return res.status(404).render('error', { message: "Transaction not found" });
+        }
+        
+        res.status(200).render('transaction-edit', { 
+            transaction: transactions[0],
+            user: req.user
+        });
+    } catch (error) {
+        console.error("Edit transaction error:", error);
+        res.status(500).render('error', { message: "Failed to load transaction for editing" });
+    } finally {
+        await client.close();
+    }
+});
+
+// Update Transaction
+app.post('/transactions/update', authenticateUser, async (req, res) => {
+    try {
+        await client.connect();
+        const db = client.db(dbName);
+        
+        const criteria = { _id: new ObjectId(req.fields._id), userId: req.user._id };
+        const updateDoc = {
+            title: req.fields.title,
+            amount: parseFloat(req.fields.amount),
+            type: req.fields.type,
+            category: req.fields.category,
+            date: new Date(req.fields.date),
+            description: req.fields.description,
+            paymentMethod: req.fields.paymentMethod,
+            updatedAt: new Date()
+        };
+        
+        const result = await updateDocument(db, transactionsCollection, criteria, updateDoc);
+        
+        if (result.modifiedCount === 0) {
+            return res.status(404).render('error', { message: "Transaction not found or no changes made" });
+        }
+        
+        res.redirect('/transactions');
+    } catch (error) {
+        console.error("Update transaction error:", error);
+        res.status(500).render('error', { message: "Failed to update transaction" });
+    } finally {
+        await client.close();
+    }
+});
+
+// Delete Transaction
+app.post('/transactions/delete', authenticateUser, async (req, res) => {
+    try {
+        await client.connect();
+        const db = client.db(dbName);
+        
+        const criteria = { _id: new ObjectId(req.fields._id), userId: req.user._id };
+        const result = await deleteDocument(db, transactionsCollection, criteria);
+        
+        if (result.deletedCount === 0) {
+            return res.status(404).render('error', { message: "Transaction not found" });
+        }
+        
+        res.redirect('/transactions');
+    } catch (error) {
+        console.error("Delete transaction error:", error);
+        res.status(500).render('error', { message: "Failed to delete transaction" });
+    } finally {
+        await client.close();
+    }
+});
+
+// RESTful APIs (No authentication required as per requirements)
+app.get('/api/transactions', async (req, res) => {
+    try {
+        await client.connect();
+        const db = client.db(dbName);
+        
+        let criteria = {};
+        
+        // Support query parameters for filtering
+        if (req.query.type) criteria.type = req.query.type;
+        if (req.query.category) criteria.category = req.query.category;
+        if (req.query.paymentMethod) criteria.paymentMethod = req.query.paymentMethod;
+        if (req.query.search) {
+            criteria.$or = [
+                { title: { $regex: req.query.search, $options: 'i' } },
+                { description: { $regex: req.query.search, $options: 'i' } }
+            ];
+        }
+        
+        const transactions = await findDocument(db, transactionsCollection, criteria);
+        res.json(transactions);
+    } catch (error) {
+        console.error("API transactions error:", error);
+        res.status(500).json({ error: "Failed to fetch transactions" });
+    } finally {
+        await client.close();
+    }
+});
+
+app.post('/api/transactions', async (req, res) => {
+    try {
+        await client.connect();
+        const db = client.db(dbName);
+        
+        const newTransaction = {
+            title: req.fields.title,
+            amount: parseFloat(req.fields.amount),
+            type: req.fields.type,
+            category: req.fields.category,
+            date: new Date(req.fields.date),
+            description: req.fields.description,
+            paymentMethod: req.fields.paymentMethod,
+            createdAt: new Date()
+        };
+        
+        const result = await insertDocument(db, transactionsCollection, newTransaction);
+        res.json({ success: true, insertedId: result.insertedId });
+    } catch (error) {
+        console.error("API create transaction error:", error);
+        res.status(500).json({ error: "Failed to create transaction" });
+    } finally {
+        await client.close();
+    }
+});
+
+app.put('/api/transactions/:id', async (req, res) => {
+    try {
+        await client.connect();
+        const db = client.db(dbName);
+        
+        const criteria = { _id: new ObjectId(req.params.id) };
+        const updateDoc = {
+            title: req.fields.title,
+            amount: parseFloat(req.fields.amount),
+            type: req.fields.type,
+            category: req.fields.category,
+            date: new Date(req.fields.date),
+            description: req.fields.description,
+            paymentMethod: req.fields.paymentMethod,
+            updatedAt: new Date()
+        };
+        
+        const result = await updateDocument(db, transactionsCollection, criteria, updateDoc);
+        res.json({ success: true, modifiedCount: result.modifiedCount });
+    } catch (error) {
+        console.error("API update transaction error:", error);
+        res.status(500).json({ error: "Failed to update transaction" });
+    } finally {
+        await client.close();
+    }
+});
+
+app.delete('/api/transactions/:id', async (req, res) => {
+    try {
+        await client.connect();
+        const db = client.db(dbName);
+        
+        const criteria = { _id: new ObjectId(req.params.id) };
+        const result = await deleteDocument(db, transactionsCollection, criteria);
+        res.json({ success: true, deletedCount: result.deletedCount });
+    } catch (error) {
+        console.error("API delete transaction error:", error);
+        res.status(500).json({ error: "Failed to delete transaction" });
+    } finally {
+        await client.close();
+    }
+});
+
 
 
 const PORT = process.env.PORT || 3000;
@@ -359,6 +593,7 @@ client.connect().then(async () => {
     console.error("❌ Failed to start server:", error);
     process.exit(1);
 });
+
 
 
 
